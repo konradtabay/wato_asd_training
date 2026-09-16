@@ -13,6 +13,7 @@ endif()
 # Search for dependencies required for building this package
 find_package(ament_cmake REQUIRED) # ROS2 build tool
 find_package(rclcpp REQUIRED)      # ROS2 C++ package
+find_package(std_msgs REQUIRED)
 
 # Compiles source files into a library
 # A library is not executed, instead other executables can link
@@ -31,6 +32,7 @@ ament_target_dependencies(costmap_lib rclcpp)
 add_executable(costmap_node src/costmap_node.cpp)
 # Link to the previously built library to access costmap classes and methods
 target_link_libraries(costmap_node costmap_lib)
+ament_target_dependencies(costmap_node rclcpp std_msgs)
 
 # Copy executable to installation location
 install(TARGETS

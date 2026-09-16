@@ -1,0 +1,8 @@
+## Copy to watod-config.local.sh (gitignored):
+##   cp watod-config.local.sh.example watod-config.local.sh
+
+# Modules for the admission assignment warmup + sim
+ACTIVE_MODULES="robot gazebo vis_tools"
+
+# Apple Silicon Mac: required. Linux/WSL/Intel Mac: comment out or remove.
+PLATFORM="arm64"

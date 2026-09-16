@@ -18,8 +18,12 @@ RUN apt-get -qq update && rosdep update && \
 ################################# Dependencies ################################
 FROM ${BASE_IMAGE} AS dependencies
 
+# humble-arm64 base: refresh ROS apt key; pin rosbag2 (glob matches 404 dbgsym packages).
+RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key \
+    -o /usr/share/keyrings/ros2-latest-archive-keyring.gpg
+
 # Install Foxglove Deps
-RUN apt-get update && apt-get install -y curl ros-humble-ros2bag ros-humble-rosbag2* ros-humble-foxglove-msgs&& \
+RUN apt-get update && apt-get install -y curl ros-humble-ros2bag ros-humble-rosbag2 ros-humble-foxglove-msgs && \
     rm -rf /var/lib/apt/lists/*
 
 # Set up apt repo
