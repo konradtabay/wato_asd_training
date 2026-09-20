@@ -25,7 +25,7 @@ ControlCore::ControlCore(const rclcpp::Logger& logger)
     has_odometry_ = true;
   }
 
-  // Compute the velocity command based on the current path and odometry
+  // Compute the distance between two points
   double ControlCore::computeDistance(const geometry_msgs::msg::Point& a, const geometry_msgs::msg::Point& b) const
   {
     const double dx = a.x - b.x;
@@ -110,7 +110,7 @@ ControlCore::ControlCore(const rclcpp::Logger& logger)
     }
 
     // Pure Pursuit curvature.
-    const double curvature = (2.0 * std::sin(alpha)) / distance;
+    const double curvature = (2.0 * std::sin(angle_error)) / distance;
 
     // Set forward and turning velocities
     cmd_vel.linear.x = linear_speed_;
