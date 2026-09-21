@@ -30,7 +30,7 @@ class CostmapCore {
   private:
     rclcpp::Logger logger_;
 
-    double resolution_ = 0.1;
+    double resolution_ = 0.1; //Resolution is "finer" than the global map
     int width_ = 200;
     int height_ = 200;
     double origin_x_ = -10.0;
