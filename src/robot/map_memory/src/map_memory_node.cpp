@@ -23,7 +23,8 @@ MapMemoryNode::MapMemoryNode()
     this->get_parameter("distance_threshold").as_double(),
     this->get_parameter("map_frame").as_string());
 
-  map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("/map", 10);
+  const auto map_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local();
+  map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("/map", map_qos);
 
   costmap_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid>(
     "/costmap", 10,
@@ -54,9 +55,7 @@ void MapMemoryNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
 
 void MapMemoryNode::updateMapTimer()
 {
-  if (!map_memory_.tryMerge()) {
-    return;
-  }
+  map_memory_.tryMerge();
 
   auto map = map_memory_.getGlobalMap();
   map.header.stamp = this->now();

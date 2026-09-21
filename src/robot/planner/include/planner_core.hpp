@@ -125,6 +125,7 @@ class PlannerCore {
 
     // Checking whether a cell is occupied
     bool isOccupied(int cx, int cy) const;
+    bool findTraversableStart(int start_x, int start_y, int& out_x, int& out_y) const;
 
     // Calculating straight-line distance from position to goal
     double heuristic(const CellIndex& a, const CellIndex& b) const;

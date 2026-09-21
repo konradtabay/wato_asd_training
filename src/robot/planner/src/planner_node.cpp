@@ -23,8 +23,9 @@ PlannerNode::PlannerNode()
   //Creating publishers and subscribers declared in .hpp file
   path_pub_ = this->create_publisher<nav_msgs::msg::Path>("/path", 10);
 
+  const auto map_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local();
   map_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid>(
-    "/map", 10,
+    "/map", map_qos,
     std::bind(&PlannerNode::mapCallback, this, std::placeholders::_1));
 
   goal_sub_ = this->create_subscription<geometry_msgs::msg::PointStamped>(
