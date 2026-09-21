@@ -165,6 +165,38 @@ bool PlannerCore::isOccupied(int cx, int cy) const
   return value >= occupied_threshold_; // Cell is considered occupied if its value is >= threshold (50).
 }
 
+bool PlannerCore::findTraversableStart(int start_x, int start_y, int& out_x, int& out_y) const
+{
+  if (!isOccupied(start_x, start_y)) {
+    out_x = start_x;
+    out_y = start_y;
+    return true;
+  }
+
+  const int max_radius = static_cast<int>(std::ceil(2.0 / map_.info.resolution));
+  for (int radius = 1; radius <= max_radius; ++radius) {
+    for (int dy = -radius; dy <= radius; ++dy) {
+      for (int dx = -radius; dx <= radius; ++dx) {
+        if (std::max(std::abs(dx), std::abs(dy)) != radius) {
+          continue;
+        }
+
+        const int nx = start_x + dx;
+        const int ny = start_y + dy;
+        if (!isOccupied(nx, ny)) {
+          out_x = nx;
+          out_y = ny;
+          return true;
+        }
+      }
+    }
+  }
+
+  out_x = start_x;
+  out_y = start_y;
+  return false;
+}
+
 // Calculate the straight-line distance between position and goal
 double PlannerCore::heuristic(const CellIndex& a, const CellIndex& b) const
 {
@@ -237,7 +269,7 @@ nav_msgs::msg::Path PlannerCore::runAStar(
     for (int i = 0; i < 8; ++i) {
       const int nx = current.x + dx[i]; // Calculate the neighbor cell's coordinates based on the current cell and the movement direction.
       const int ny = current.y + dy[i]; 
-      if (isOccupied(nx, ny)) { // Skip occupied cells.
+      if (isOccupied(nx, ny) && CellIndex(nx, ny) != start) {
         continue;
       }
 
@@ -285,7 +317,13 @@ nav_msgs::msg::Path PlannerCore::planPath()
     return empty_path;
   }
 
-  return runAStar(start_x, start_y, goal_x, goal_y);
+  int traversable_x = start_x;
+  int traversable_y = start_y;
+  if (!findTraversableStart(start_x, start_y, traversable_x, traversable_y)) {
+    RCLCPP_WARN(logger_, "Robot is inside inflated cells; planning from the robot cell");
+  }
+
+  return runAStar(traversable_x, traversable_y, goal_x, goal_y);
 }
 
 } 

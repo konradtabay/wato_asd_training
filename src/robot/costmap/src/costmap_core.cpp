@@ -19,7 +19,9 @@ void CostmapCore::configure(
   double origin_x,
   double origin_y,
   double inflation_radius,
-  int max_cost)
+  int max_cost,
+  double min_obstacle_range,
+  double footprint_clear_radius)
 {
   resolution_ = resolution;
   width_ = width;
@@ -28,6 +30,8 @@ void CostmapCore::configure(
   origin_y_ = origin_y;
   inflation_radius_ = inflation_radius;
   max_cost_ = max_cost;
+  min_obstacle_range_ = min_obstacle_range;
+  footprint_clear_radius_ = footprint_clear_radius;
   grid_.assign(static_cast<size_t>(width_ * height_), -1);
 }
 
@@ -88,6 +92,37 @@ void CostmapCore::inflateObstacles()
   grid_ = std::move(inflated);
 }
 
+void CostmapCore::clearRobotFootprint()
+{
+  if (footprint_clear_radius_ <= 0.0) {
+    return;
+  }
+
+  int origin_x_cell = 0;
+  int origin_y_cell = 0;
+  if (!convertToGrid(0.0, 0.0, origin_x_cell, origin_y_cell)) {
+    return;
+  }
+
+  const int radius_cells =
+    static_cast<int>(std::ceil(footprint_clear_radius_ / resolution_));
+  for (int dy = -radius_cells; dy <= radius_cells; ++dy) {
+    for (int dx = -radius_cells; dx <= radius_cells; ++dx) {
+      const int nx = origin_x_cell + dx;
+      const int ny = origin_y_cell + dy;
+      if (nx < 0 || nx >= width_ || ny < 0 || ny >= height_) {
+        continue;
+      }
+
+      const double dist =
+        std::hypot(static_cast<double>(dx), static_cast<double>(dy)) * resolution_;
+      if (dist <= footprint_clear_radius_) {
+        grid_[static_cast<size_t>(ny * width_ + nx)] = 0;
+      }
+    }
+  }
+}
+
 nav_msgs::msg::OccupancyGrid CostmapCore::buildOccupancyGrid(
   const std_msgs::msg::Header& header) const
 {
@@ -113,7 +148,8 @@ nav_msgs::msg::OccupancyGrid CostmapCore::updateFromScan(
     const double range = scan.ranges[i];
     if (!std::isfinite(range) ||
       range <= scan.range_min ||
-      range >= scan.range_max)
+      range >= scan.range_max ||
+      range < min_obstacle_range_)
     {
       continue;
     }
@@ -130,6 +166,7 @@ nav_msgs::msg::OccupancyGrid CostmapCore::updateFromScan(
   }
 
   inflateObstacles();
+  clearRobotFootprint();
   return buildOccupancyGrid(scan.header);
 }
 
