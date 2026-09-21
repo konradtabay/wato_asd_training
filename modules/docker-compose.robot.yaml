@@ -9,6 +9,7 @@ services:
       args:
         BASE_IMAGE: ${BASE_IMAGE_OVERRIDE-}
     image: "${ROBOT_IMAGE:?}:${TAG}"
+    ipc: host
     profiles:
       - deploy
     command: /bin/bash -c "ros2 launch bringup_robot robot.launch.py"
@@ -16,6 +17,7 @@ services:
   robot_dev:
     build: *robot_build
     image: "${ROBOT_IMAGE:?}:dev_${TAG}"
+    ipc: host
     command: tail -F anything
     profiles:
       - develop
