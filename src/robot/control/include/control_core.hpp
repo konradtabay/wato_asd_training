@@ -39,7 +39,7 @@ class ControlCore {
     bool has_odometry_ = false;
 
     double lookahead_distance_ = 1.0;
-    double goal_tolerance_ = 0.1;
+    double goal_tolerance_ = 0.5;
     double linear_speed_ = 0.5;
     double max_angular_speed_ = 1.2;
     double rotate_threshold_ = 0.8;

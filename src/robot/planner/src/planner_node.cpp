@@ -6,11 +6,11 @@
 PlannerNode::PlannerNode()
 : Node("planner_node"), planner_(robot::PlannerCore(this->get_logger()))
 {
-  this->declare_parameter("occupied_threshold", 50); // Cell is considered occupied if its value is >= 50
-  this->declare_parameter("goal_tolerance", 0.5); // Goal considered reached within 0.5m
-  this->declare_parameter("replan_progress_threshold", 0.2); // Progress threshold for 500ms timer increments
-  this->declare_parameter("replan_timeout_sec", 3.0); // Timeout for replanning
-  this->declare_parameter("map_frame", "sim_world"); // Frame ID for the map
+  this->declare_parameter("occupied_threshold", 50);
+  this->declare_parameter("goal_tolerance", 0.5);
+  this->declare_parameter("replan_progress_threshold", 0.2);
+  this->declare_parameter("replan_timeout_sec", 3.0);
+  this->declare_parameter("map_frame", "sim_world");
 
   planner_.configure(
     this->get_parameter("occupied_threshold").as_int(),
@@ -19,8 +19,6 @@ PlannerNode::PlannerNode()
     this->get_parameter("replan_timeout_sec").as_double(),
     this->get_parameter("map_frame").as_string());
 
-  
-  //Creating publishers and subscribers declared in .hpp file
   path_pub_ = this->create_publisher<nav_msgs::msg::Path>("/path", 10);
 
   const auto map_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local();
@@ -44,39 +42,39 @@ PlannerNode::PlannerNode()
 void PlannerNode::mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 {
   planner_.updateMap(*msg);
-  if (planner_.isWaitingForRobotToReachGoal()) { 
-    publishPath(); // Update the path if a new map arrives while travelling
+  if (planner_.isWaitingForRobotToReachGoal()) {
+    publishPath();
   }
 }
 
 void PlannerNode::goalCallback(const geometry_msgs::msg::PointStamped::SharedPtr msg)
 {
   planner_.updateGoal(*msg);
-  publishPath(); // Plan a path when a goal is received
+  publishPath();
 }
 
 void PlannerNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
   planner_.updateOdometry(
     msg->pose.pose.position.x,
-    msg->pose.pose.position.y); // Update robot position
+    msg->pose.pose.position.y);
 }
 
 void PlannerNode::timerCallback()
 {
-  if (!planner_.isWaitingForRobotToReachGoal()) { // Do nothing if not travelling to goal
+  if (!planner_.isWaitingForRobotToReachGoal()) {
     return;
   }
 
   if (planner_.goalReached()) {
     RCLCPP_INFO(this->get_logger(), "Goal reached!");
-    planner_.markGoalReached(); 
+    planner_.markGoalReached();
     return;
   }
 
   const double now_sec = this->now().seconds();
   planner_.updateProgressAnchor(now_sec);
-  if (planner_.shouldReplan(now_sec)) { //Check if new path is needed due to timeout or lack of progress
+  if (planner_.shouldReplan(now_sec)) {
     RCLCPP_INFO(this->get_logger(), "Replanning due to timeout or lack of progress");
     publishPath();
   }
@@ -85,7 +83,7 @@ void PlannerNode::timerCallback()
 void PlannerNode::publishPath()
 {
   if (!planner_.hasMap() || !planner_.hasGoal()) {
-    return; // Cannot do anything if map or goal is missing
+    return;
   }
 
   auto path = planner_.planPath();
@@ -93,7 +91,7 @@ void PlannerNode::publishPath()
   for (auto& pose : path.poses) {
     pose.header.stamp = path.header.stamp;
   }
-  path_pub_->publish(path); // After pathing, publish the path
+  path_pub_->publish(path);
   planner_.markReplan(
     planner_.robotX(),
     planner_.robotY(),

@@ -7,7 +7,7 @@ ControlNode::ControlNode()
 : Node("control_node"), control_(robot::ControlCore(this->get_logger()))
 {
   this->declare_parameter("lookahead_distance", 1.0);
-  this->declare_parameter("goal_tolerance", 0.1);
+  this->declare_parameter("goal_tolerance", 0.5);
   this->declare_parameter("linear_speed", 0.5);
   this->declare_parameter("max_angular_speed", 1.2);
   this->declare_parameter("rotate_threshold", 0.8);

@@ -117,7 +117,10 @@ void CostmapCore::clearRobotFootprint()
       const double dist =
         std::hypot(static_cast<double>(dx), static_cast<double>(dy)) * resolution_;
       if (dist <= footprint_clear_radius_) {
-        grid_[static_cast<size_t>(ny * width_ + nx)] = 0;
+        int8_t& cell = grid_[static_cast<size_t>(ny * width_ + nx)];
+        if (cell != max_cost_) {
+          cell = 0;
+        }
       }
     }
   }
