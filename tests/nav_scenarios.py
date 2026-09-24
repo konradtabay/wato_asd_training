@@ -20,6 +20,7 @@ from rclpy.node import Node
 
 # Arena geometry from src/gazebo/launch/robot_env.sdf: (center_x, center_y, half_size).
 BOXES = [(7, -6, 1.5), (-8, 6, 1.5), (4, 9, 1.5), (9, 3, 1.0), (1, -10, 1.0)]
+CYLINDERS = [(0, 0, 3.0), (-7, -7, 2.0)]  # (center_x, center_y, radius)
 WALL_INNER = 14.75
 
 # Robot geometry, relative to the chassis centre (x forward, y left).
@@ -41,9 +42,9 @@ SCENARIOS = {
                     "goal directly behind box (1,-10); must wrap around it"),
     "diagonal_gap": ((6.0, -12.8, 90), (2.8, -6.5), 90,
                      "3.8 m corner-to-corner gap between boxes (1,-10) and (7,-6)"),
-    "corner_dive": ((-9.0, -9.0, -135), (-13.2, -13.2), 60,
+    "corner_dive": ((-12.0, -9.0, -110), (-13.2, -13.2), 60,
                     "drive into the south-west arena corner"),
-    "corner_escape": ((-13.2, -13.2, -135), (-9.0, -9.0), 90,
+    "corner_escape": ((-13.2, -13.2, -135), (-12.0, -9.0), 90,
                       "nose in the arena corner, goal behind; rotate between two walls"),
     "north_gap_hairpin": ((0.0, 12.6, 0), (4.0, 6.0), 90,
                           "4.25 m gap above box (4,9), then U-turn to its south side"),
@@ -53,8 +54,8 @@ SCENARIOS = {
                     "goal 1.2 m from box (-8,6), just outside the lethal zone"),
     "fast_corner": ((-12.0, -1.0, 90), (-4.5, 9.0), 90,
                     "turn around box (-8,6) corner after a straight at speed"),
-    "long_straight": ((-11.0, -1.0, 0), (11.0, -1.0), 90,
-                      "22 m straight at full speed, stop 3.75 m before the east wall"),
+    "long_straight": ((-11.0, 12.6, 0), (11.0, 12.6), 90,
+                      "22 m straight along the north corridor at full speed, then stop"),
 }
 
 
@@ -64,6 +65,8 @@ def point_clearance(x, y):
         dx = max(abs(x - cx) - h, 0.0)
         dy = max(abs(y - cy) - h, 0.0)
         best = min(best, math.hypot(dx, dy))
+    for cx, cy, r in CYLINDERS:
+        best = min(best, max(math.hypot(x - cx, y - cy) - r, 0.0))
     return best
 
 
@@ -220,7 +223,9 @@ def main():
 
     rclpy.init()
     h = Harness()
-    h.spin(2.0)
+    deadline = time.time() + 10.0
+    while h.odom is None and time.time() < deadline:
+        h.spin(0.2)
     if h.odom is None:
         print("no /odom/filtered; is the robot stack up?")
         return 2

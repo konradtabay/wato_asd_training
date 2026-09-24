@@ -18,7 +18,8 @@ void ControlCore::configure(
   double rotate_threshold,
   double base_offset,
   double min_speed,
-  double slowdown_distance)
+  double slowdown_distance,
+  double rotate_speed)
 {
   lookahead_distance_ = lookahead_distance;
   goal_tolerance_ = goal_tolerance;
@@ -27,6 +28,7 @@ void ControlCore::configure(
   slowdown_distance_ = slowdown_distance;
   max_angular_speed_ = max_angular_speed;
   rotate_threshold_ = rotate_threshold;
+  rotate_speed_ = rotate_speed;
   base_offset_ = base_offset;
 }
 
@@ -156,8 +158,10 @@ geometry_msgs::msg::Twist ControlCore::computeVelocity(
 
   const double angle_error = headingErrorTo(target.pose.position);
 
+  // Spinning in place pivots on the rear axle; a fast spin makes the wheels slip and
+  // the body slide, which matters when turning around between two walls.
   if (std::abs(angle_error) > rotate_threshold_) {
-    cmd_vel.angular.z = clampAngular(1.5 * angle_error);
+    cmd_vel.angular.z = std::clamp(1.5 * angle_error, -rotate_speed_, rotate_speed_);
     return cmd_vel;
   }
 

@@ -24,7 +24,8 @@ class ControlCore {
       double rotate_threshold,
       double base_offset,
       double min_speed,
-      double slowdown_distance);
+      double slowdown_distance,
+      double rotate_speed);
 
     void updatePath(const nav_msgs::msg::Path& path);
     void updateOdometry(const nav_msgs::msg::Odometry& odom);
@@ -42,12 +43,13 @@ class ControlCore {
     bool has_odometry_ = false;
 
     double lookahead_distance_ = 1.2;
-    double goal_tolerance_ = 0.5;
+    double goal_tolerance_ = 0.3;
     double linear_speed_ = 2.0;
     double min_speed_ = 0.3;
     double slowdown_distance_ = 3.0;
     double max_angular_speed_ = 1.6;
     double rotate_threshold_ = 0.8;
+    double rotate_speed_ = 0.8;
     double base_offset_ = 0.8;
 
     std::optional<geometry_msgs::msg::PoseStamped> findPointAhead(double distance) const;

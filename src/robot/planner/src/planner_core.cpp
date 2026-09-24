@@ -178,38 +178,49 @@ double PlannerCore::cellPenalty(int cx, int cy) const
   return 1.0 + cost_weight_ * static_cast<double>(value) / 100.0;
 }
 
-// Nearest free cell within max_distance, searched in growing square rings.
+// Closest free cell (Euclidean) within max_distance; ties go to the cell nearest the robot.
 bool PlannerCore::findNearestFree(
   int start_x, int start_y, double max_distance, int& out_x, int& out_y) const
 {
+  out_x = start_x;
+  out_y = start_y;
   if (!isOccupied(start_x, start_y)) {
-    out_x = start_x;
-    out_y = start_y;
     return true;
   }
 
-  const int max_radius = static_cast<int>(std::ceil(max_distance / map_.info.resolution));
-  for (int radius = 1; radius <= max_radius; ++radius) {
-    for (int dy = -radius; dy <= radius; ++dy) {
-      for (int dx = -radius; dx <= radius; ++dx) {
-        if (std::max(std::abs(dx), std::abs(dy)) != radius) {
-          continue;
-        }
+  int robot_x = start_x;
+  int robot_y = start_y;
+  worldToGrid(robot_x_, robot_y_, robot_x, robot_y);
 
-        const int nx = start_x + dx;
-        const int ny = start_y + dy;
-        if (!isOccupied(nx, ny)) {
-          out_x = nx;
-          out_y = ny;
-          return true;
-        }
+  const int max_radius = static_cast<int>(std::ceil(max_distance / map_.info.resolution));
+  double best_dist = std::numeric_limits<double>::max();
+  double best_robot_dist = std::numeric_limits<double>::max();
+  bool found = false;
+
+  for (int dy = -max_radius; dy <= max_radius; ++dy) {
+    for (int dx = -max_radius; dx <= max_radius; ++dx) {
+      const double dist = std::hypot(dx, dy);
+      if (dist > max_radius || dist > best_dist + 1e-9) {
+        continue;
+      }
+
+      const int nx = start_x + dx;
+      const int ny = start_y + dy;
+      if (isOccupied(nx, ny)) {
+        continue;
+      }
+
+      const double robot_dist = std::hypot(nx - robot_x, ny - robot_y);
+      if (dist < best_dist - 1e-9 || robot_dist < best_robot_dist) {
+        best_dist = dist;
+        best_robot_dist = robot_dist;
+        out_x = nx;
+        out_y = ny;
+        found = true;
       }
     }
   }
-
-  out_x = start_x;
-  out_y = start_y;
-  return false;
+  return found;
 }
 
 double PlannerCore::heuristic(const CellIndex& a, const CellIndex& b) const

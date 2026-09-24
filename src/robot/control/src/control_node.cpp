@@ -7,12 +7,13 @@ ControlNode::ControlNode()
 : Node("control_node"), control_(robot::ControlCore(this->get_logger()))
 {
   this->declare_parameter("lookahead_distance", 1.2);
-  this->declare_parameter("goal_tolerance", 0.5);
+  this->declare_parameter("goal_tolerance", 0.3);
   this->declare_parameter("linear_speed", 2.0);
   this->declare_parameter("min_speed", 0.3);
   this->declare_parameter("slowdown_distance", 3.0);
   this->declare_parameter("max_angular_speed", 1.6);
   this->declare_parameter("rotate_threshold", 0.8);
+  this->declare_parameter("rotate_speed", 0.8);
   this->declare_parameter("base_offset", 0.8);
 
   control_.configure(
@@ -23,7 +24,8 @@ ControlNode::ControlNode()
     this->get_parameter("rotate_threshold").as_double(),
     this->get_parameter("base_offset").as_double(),
     this->get_parameter("min_speed").as_double(),
-    this->get_parameter("slowdown_distance").as_double());
+    this->get_parameter("slowdown_distance").as_double(),
+    this->get_parameter("rotate_speed").as_double());
 
   cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
 

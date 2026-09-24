@@ -8,7 +8,7 @@ PlannerNode::PlannerNode()
 {
   this->declare_parameter("occupied_threshold", 50);
   this->declare_parameter("cost_weight", 3.0);
-  this->declare_parameter("goal_tolerance", 0.5);
+  this->declare_parameter("goal_tolerance", 0.3);
   this->declare_parameter("base_offset", 0.8);
   this->declare_parameter("replan_progress_threshold", 0.2);
   this->declare_parameter("replan_timeout_sec", 3.0);
