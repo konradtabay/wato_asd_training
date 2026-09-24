@@ -5,5 +5,5 @@ map_memory_node:
     height: 150
     origin_x: -15.0
     origin_y: -15.0
-    distance_threshold: 1.5
+    distance_threshold: 0.5
     map_frame: sim_world

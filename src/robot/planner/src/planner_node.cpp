@@ -7,14 +7,18 @@ PlannerNode::PlannerNode()
 : Node("planner_node"), planner_(robot::PlannerCore(this->get_logger()))
 {
   this->declare_parameter("occupied_threshold", 50);
+  this->declare_parameter("cost_weight", 3.0);
   this->declare_parameter("goal_tolerance", 0.5);
+  this->declare_parameter("base_offset", 0.8);
   this->declare_parameter("replan_progress_threshold", 0.2);
   this->declare_parameter("replan_timeout_sec", 3.0);
   this->declare_parameter("map_frame", "sim_world");
 
   planner_.configure(
     this->get_parameter("occupied_threshold").as_int(),
+    this->get_parameter("cost_weight").as_double(),
     this->get_parameter("goal_tolerance").as_double(),
+    this->get_parameter("base_offset").as_double(),
     this->get_parameter("replan_progress_threshold").as_double(),
     this->get_parameter("replan_timeout_sec").as_double(),
     this->get_parameter("map_frame").as_string());
@@ -55,9 +59,7 @@ void PlannerNode::goalCallback(const geometry_msgs::msg::PointStamped::SharedPtr
 
 void PlannerNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
-  planner_.updateOdometry(
-    msg->pose.pose.position.x,
-    msg->pose.pose.position.y);
+  planner_.updateOdometry(*msg);
 }
 
 void PlannerNode::timerCallback()

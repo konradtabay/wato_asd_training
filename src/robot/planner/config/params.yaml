@@ -1,7 +1,9 @@
 planner_node:
   ros__parameters:
     occupied_threshold: 50
+    cost_weight: 3.0
     goal_tolerance: 0.5
+    base_offset: 0.8
     replan_progress_threshold: 0.2
     replan_timeout_sec: 3.0
     map_frame: sim_world

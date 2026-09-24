@@ -5,7 +5,6 @@ costmap_node:
     height: 200
     origin_x: -10.0
     origin_y: -10.0
-    inflation_radius: 1.0
+    inflation_radius: 2.2
     max_cost: 100
     min_obstacle_range: 0.4
-    footprint_clear_radius: 1.2

@@ -11,7 +11,7 @@ MapMemoryNode::MapMemoryNode()
   this->declare_parameter("height", 150);
   this->declare_parameter("origin_x", -15.0);
   this->declare_parameter("origin_y", -15.0);
-  this->declare_parameter("distance_threshold", 1.5);
+  this->declare_parameter("distance_threshold", 0.5);
   this->declare_parameter("map_frame", "sim_world");
 
   map_memory_.configure(

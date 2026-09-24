@@ -12,13 +12,17 @@ PlannerCore::PlannerCore(const rclcpp::Logger& logger) : logger_(logger) {}
 
 void PlannerCore::configure(
   int occupied_threshold,
+  double cost_weight,
   double goal_tolerance,
+  double base_offset,
   double replan_progress_threshold,
   double replan_timeout_sec,
   const std::string& map_frame)
 {
   occupied_threshold_ = occupied_threshold;
+  cost_weight_ = cost_weight;
   goal_tolerance_ = goal_tolerance;
+  base_offset_ = base_offset;
   replan_progress_threshold_ = replan_progress_threshold;
   replan_timeout_sec_ = replan_timeout_sec;
   map_frame_ = map_frame;
@@ -38,10 +42,16 @@ void PlannerCore::updateGoal(const geometry_msgs::msg::PointStamped& goal)
   state_ = State::WAITING_FOR_ROBOT_TO_REACH_GOAL;
 }
 
-void PlannerCore::updateOdometry(double x, double y)
+// Odometry is the lidar at the front of the chassis; plan for the chassis centre
+// so the obstacle clearance applies to the whole body.
+void PlannerCore::updateOdometry(const nav_msgs::msg::Odometry& odom)
 {
-  robot_x_ = x;
-  robot_y_ = y;
+  const auto& q = odom.pose.pose.orientation;
+  const double yaw = std::atan2(
+    2.0 * (q.w * q.z + q.x * q.y),
+    1.0 - 2.0 * (q.y * q.y + q.z * q.z));
+  robot_x_ = odom.pose.pose.position.x - base_offset_ * std::cos(yaw);
+  robot_y_ = odom.pose.pose.position.y - base_offset_ * std::sin(yaw);
 }
 
 bool PlannerCore::isWaitingForGoal() const
@@ -156,7 +166,21 @@ bool PlannerCore::isOccupied(int cx, int cy) const
   return value >= occupied_threshold_;
 }
 
-bool PlannerCore::findTraversableStart(int start_x, int start_y, int& out_x, int& out_y) const
+// Extra step cost for inflated cells so paths stay centred between obstacles
+// instead of skimming the occupied threshold.
+double PlannerCore::cellPenalty(int cx, int cy) const
+{
+  const int width = static_cast<int>(map_.info.width);
+  const int8_t value = map_.data[static_cast<size_t>(cy * width + cx)];
+  if (value <= 0) {
+    return 1.0;
+  }
+  return 1.0 + cost_weight_ * static_cast<double>(value) / 100.0;
+}
+
+// Nearest free cell within max_distance, searched in growing square rings.
+bool PlannerCore::findNearestFree(
+  int start_x, int start_y, double max_distance, int& out_x, int& out_y) const
 {
   if (!isOccupied(start_x, start_y)) {
     out_x = start_x;
@@ -164,7 +188,7 @@ bool PlannerCore::findTraversableStart(int start_x, int start_y, int& out_x, int
     return true;
   }
 
-  const int max_radius = static_cast<int>(std::ceil(2.0 / map_.info.resolution));
+  const int max_radius = static_cast<int>(std::ceil(max_distance / map_.info.resolution));
   for (int radius = 1; radius <= max_radius; ++radius) {
     for (int dy = -radius; dy <= radius; ++dy) {
       for (int dx = -radius; dx <= radius; ++dx) {
@@ -256,7 +280,15 @@ nav_msgs::msg::Path PlannerCore::runAStar(
     for (int i = 0; i < 8; ++i) {
       const int nx = current.x + dx[i];
       const int ny = current.y + dy[i];
-      if (isOccupied(nx, ny) && CellIndex(nx, ny) != start) {
+      if (isOccupied(nx, ny)) {
+        continue;
+      }
+
+      // No diagonal squeezing between two blocked cells: the robot cannot cut a corner.
+      const bool diagonal = dx[i] != 0 && dy[i] != 0;
+      if (diagonal && (isOccupied(current.x + dx[i], current.y) ||
+        isOccupied(current.x, current.y + dy[i])))
+      {
         continue;
       }
 
@@ -265,7 +297,7 @@ nav_msgs::msg::Path PlannerCore::runAStar(
         continue;
       }
 
-      const double tentative_g = g_score[current] + step_cost[i];
+      const double tentative_g = g_score[current] + step_cost[i] * cellPenalty(nx, ny);
       if (g_score.count(neighbor) == 0 || tentative_g < g_score[neighbor]) {
         came_from[neighbor] = current;
         g_score[neighbor] = tentative_g;
@@ -305,8 +337,21 @@ nav_msgs::msg::Path PlannerCore::planPath()
 
   int traversable_x = start_x;
   int traversable_y = start_y;
-  if (!findTraversableStart(start_x, start_y, traversable_x, traversable_y)) {
+  if (!findNearestFree(start_x, start_y, 2.0, traversable_x, traversable_y)) {
     RCLCPP_WARN(logger_, "Robot is inside inflated cells; planning from the robot cell");
+  }
+
+  // A goal clicked just inside the inflation zone moves to the nearest reachable cell,
+  // and the goal itself is updated so goalReached() agrees with where the path ends.
+  int free_goal_x = goal_x;
+  int free_goal_y = goal_y;
+  if (findNearestFree(goal_x, goal_y, 1.0, free_goal_x, free_goal_y) &&
+    (free_goal_x != goal_x || free_goal_y != goal_y))
+  {
+    gridToWorld(free_goal_x, free_goal_y, goal_x_, goal_y_);
+    RCLCPP_INFO(logger_, "Goal too close to an obstacle; moved to (%.2f, %.2f)", goal_x_, goal_y_);
+    goal_x = free_goal_x;
+    goal_y = free_goal_y;
   }
 
   return runAStar(traversable_x, traversable_y, goal_x, goal_y);

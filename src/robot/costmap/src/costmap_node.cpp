@@ -10,10 +10,9 @@ CostmapNode::CostmapNode()
   this->declare_parameter("height", 200);
   this->declare_parameter("origin_x", -10.0);
   this->declare_parameter("origin_y", -10.0);
-  this->declare_parameter("inflation_radius", 1.0);
+  this->declare_parameter("inflation_radius", 2.2);
   this->declare_parameter("max_cost", 100);
   this->declare_parameter("min_obstacle_range", 0.4);
-  this->declare_parameter("footprint_clear_radius", 1.2);
 
   costmap_.configure(
     this->get_parameter("resolution").as_double(),
@@ -23,8 +22,7 @@ CostmapNode::CostmapNode()
     this->get_parameter("origin_y").as_double(),
     this->get_parameter("inflation_radius").as_double(),
     this->get_parameter("max_cost").as_int(),
-    this->get_parameter("min_obstacle_range").as_double(),
-    this->get_parameter("footprint_clear_radius").as_double());
+    this->get_parameter("min_obstacle_range").as_double());
 
   costmap_pub_ =
     this->create_publisher<nav_msgs::msg::OccupancyGrid>("/costmap", 10);

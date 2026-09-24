@@ -8,6 +8,7 @@
 
 #include "geometry_msgs/msg/point_stamped.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -59,14 +60,16 @@ class PlannerCore {
 
     void configure(
       int occupied_threshold,
+      double cost_weight,
       double goal_tolerance,
+      double base_offset,
       double replan_progress_threshold,
       double replan_timeout_sec,
       const std::string& map_frame);
 
     void updateMap(const nav_msgs::msg::OccupancyGrid& map);
     void updateGoal(const geometry_msgs::msg::PointStamped& goal);
-    void updateOdometry(double x, double y);
+    void updateOdometry(const nav_msgs::msg::Odometry& odom);
 
     nav_msgs::msg::Path planPath();
     bool goalReached() const;
@@ -101,7 +104,9 @@ class PlannerCore {
     bool has_goal_ = false;
 
     int occupied_threshold_ = 50;
+    double cost_weight_ = 3.0;
     double goal_tolerance_ = 0.5;
+    double base_offset_ = 0.8;
     double replan_progress_threshold_ = 0.2;
     double replan_timeout_sec_ = 3.0;
     std::string map_frame_ = "sim_world";
@@ -114,7 +119,9 @@ class PlannerCore {
     bool worldToGrid(double wx, double wy, int& cx, int& cy) const;
     void gridToWorld(int cx, int cy, double& wx, double& wy) const;
     bool isOccupied(int cx, int cy) const;
-    bool findTraversableStart(int start_x, int start_y, int& out_x, int& out_y) const;
+    double cellPenalty(int cx, int cy) const;
+    bool findNearestFree(
+      int start_x, int start_y, double max_distance, int& out_x, int& out_y) const;
     double heuristic(const CellIndex& a, const CellIndex& b) const;
     nav_msgs::msg::Path runAStar(int start_x, int start_y, int goal_x, int goal_y) const;
 };
