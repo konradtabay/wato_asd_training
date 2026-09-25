@@ -83,6 +83,19 @@ Stop everything:
 
 5. Warmup: add a **Raw Messages** panel on `/test_topic` to see `"Hello, ROS 2!"` every 500 ms.
 
+### Cleaner 3D view (no boxes chasing the robot)
+
+Re-import the layout after pulling updates. The bundled layout hides display-only overlays that move with the robot:
+
+| What you might see | Topic / layer | Why it moves | Needed for driving? |
+|---|---|---|---|
+| Grey wedge or square outline | `/costmap` | Built in the lidar frame; unknown cells (−1) are “not scanned yet,” including behind obstacles | **No** (only for merging into `/map`) |
+| White wireframe box | TF `robot/chassis/camera` (etc.) | Debug axis for a sensor frame | **No** |
+| Blue robot outline | Robot URDF layer | Drawn from `robot.urdf` on the robot TF tree | **No** |
+| Green dots | `/lidar` | Real scan hits in the lidar frame | **No** for planning (nice to keep for demos) |
+
+Keep **`/map`** on (world frame, `sim_world`) with normal costmap colors. Hide **`/costmap`** by default; that is what draws the moving “blind spot” wedge in the lidar frame.
+
 ## Apple Silicon notes
 
 This fork includes Dockerfile changes for `humble-arm64` base images:

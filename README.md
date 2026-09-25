@@ -6,7 +6,7 @@ Built on ROS 2 Humble in a Gazebo simulation, for the [WATonomous](https://www.w
 
 ![Demo: clicking goals while the robot plans and drives around obstacles](docs/media/demo.gif)
 
-[Watch the full demo video (45 s)](docs/media/demo.mp4)
+[Watch the full demo video (37 s)](docs/media/demo.mp4)
 
 **In the video:**
 - **Green dots:** what the lidar sees right now.

@@ -46,7 +46,13 @@
           "visible": false
         },
         "frame:robot/chassis/camera": {
-          "visible": true
+          "visible": false
+        },
+        "frame:robot/chassis": {
+          "visible": false
+        },
+        "frame:robot/chassis/lidar": {
+          "visible": false
         },
         "frame:cyl2": {
           "visible": false
@@ -70,7 +76,13 @@
           "visible": false
         },
         "frame:sim_world": {
-          "visible": true
+          "visible": false
+        },
+        "frame:robot": {
+          "visible": false
+        },
+        "frame:world": {
+          "visible": false
         }
       },
       "topics": {
@@ -87,7 +99,7 @@
           "pointShape": "circle"
         },
         "/lidar/points": {
-          "visible": true,
+          "visible": false,
           "colorField": "ring",
           "colorMode": "gradient",
           "colorMap": "turbo",
@@ -116,7 +128,7 @@
           "alpha": 0.5016
         },
         "/costmap": {
-          "visible": true,
+          "visible": false,
           "colorMode": "costmap",
           "alpha": 1
         },
